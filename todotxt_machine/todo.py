@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 import re
+import os
 import random
 from datetime import date
 
@@ -142,7 +143,27 @@ class Todos:
 
     def __init__(self, todo_items, file_path):
         self.file_path = file_path
+        self.file_mod_time = os.stat(self.file_path).st_mtime
+        self.is_sorted = False
+        self.is_sorted_reverse = False
         self.update(todo_items)
+
+    def update_from_file(self):
+        if os.stat(self.file_path).st_mtime != self.file_mod_time:
+            self.file_mod_time = os.stat(self.file_path).st_mtime
+            with open(self.file_path, "r") as todotxt_file:
+                self.update(todotxt_file.readlines())
+                self.update_raw_indices()
+
+                # update sort
+                if self.is_sorted:
+                    self.sorted(self.is_sorted_reverse)
+                else:
+                    self.sorted_raw()
+
+                return True
+
+        return False
 
     def save(self):
         with open(self.file_path, "w") as todotxt_file:
@@ -263,12 +284,15 @@ class Todos:
         return sorted(set([project for todo in self.todo_items for project in todo.projects] ))
 
     def sorted(self, reversed_sort=False):
+        self.is_sorted = True
+        self.is_sorted_reverse = reversed_sort
         self.todo_items.sort( key=lambda todo: todo.raw, reverse=reversed_sort )
 
     def sorted_reverse(self):
         self.sorted(reversed_sort=True)
 
     def sorted_raw(self):
+        self.is_sorted = False
         self.todo_items.sort( key=lambda todo: todo.raw_index )
 
     def filter_context(self, context):

@@ -443,6 +443,8 @@ class Screen:
             if sys.stdin in select.select([sys.stdin], [], [], 0.1)[0]:
                 c = sys.stdin.read(1)
                 self.key = c
+                if self.todo.update_from_file():
+                    self.update_context_and_project_lists()
                 if c != "":
                     if c == "?":
                         self.display_help()
